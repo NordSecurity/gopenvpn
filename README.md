@@ -14,7 +14,7 @@ existing features will be gratefully accepted.
 ## Installation
 
 ```
-go get github.com/apparentlymart/go-openvpn-mgmt/openvpn
+go get github.com/NordSecurity/gopenvpn/openvpn
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ First, we can import the package:
 
 ```go
 import (
-    "github.com/apparentlymart/go-openvpn-mgmt/openvpn"
+    "github.com/NordSecurity/gopenvpn/openvpn"
 )
 ```
 
@@ -78,7 +78,7 @@ func newConnection(conn openvpn.IncomingConn) {
 ```
 
 For more usage information on both modes, see
-[the reference documentation](https://godoc.org/github.com/apparentlymart/go-openvpn-mgmt/openvpn).
+[the reference documentation](https://godoc.org/github.com/NordSecurity/gopenvpn/openvpn).
 
 # License
 

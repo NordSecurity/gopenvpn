@@ -6,20 +6,22 @@ import (
 	"strconv"
 )
 
-var eventSep = []byte(":")
-var fieldSep = []byte(",")
-var byteCountEventKW = []byte("BYTECOUNT")
-var byteCountCliEventKW = []byte("BYTECOUNT_CLI")
-var clientEventKW = []byte("CLIENT")
-var echoEventKW = []byte("ECHO")
-var fatalEventKW = []byte("FATAL")
-var holdEventKW = []byte("HOLD")
-var infoEventKW = []byte("INFO")
-var logEventKW = []byte("LOG")
-var needOkEventKW = []byte("NEED-OK")
-var needStrEventKW = []byte("NEED-STR")
-var passwordEventKW = []byte("PASSWORD")
-var stateEventKW = []byte("STATE")
+var (
+	eventSep            = []byte(":")
+	fieldSep            = []byte(",")
+	byteCountEventKW    = []byte("BYTECOUNT")
+	byteCountCliEventKW = []byte("BYTECOUNT_CLI")
+	clientEventKW       = []byte("CLIENT")
+	echoEventKW         = []byte("ECHO")
+	fatalEventKW        = []byte("FATAL")
+	holdEventKW         = []byte("HOLD")
+	infoEventKW         = []byte("INFO")
+	logEventKW          = []byte("LOG")
+	needOkEventKW       = []byte("NEED-OK")
+	needStrEventKW      = []byte("NEED-STR")
+	passwordEventKW     = []byte("PASSWORD")
+	stateEventKW        = []byte("STATE")
+)
 
 type Event interface {
 	String() string
