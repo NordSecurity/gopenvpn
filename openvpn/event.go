@@ -111,8 +111,13 @@ func (e *StateEvent) Description() string {
 //
 // This field is only populated for events whose NewState returns
 // either ASSIGN_IP or CONNECTED.
+//
+// When both IPv6 and IPv4 addresses are available, the IPv6 one is returned.
 func (e *StateEvent) LocalTunnelAddr() string {
 	parts := e.parts()
+	if len(parts) > 8 { // IPv6
+		return string(parts[8])
+	}
 	return string(parts[3])
 }
 
@@ -145,17 +150,13 @@ func (e *StateEvent) String() string {
 
 func (e *StateEvent) parts() [][]byte {
 	if e.bodyParts == nil {
-		// State messages currently have only five segments, but
-		// we'll ask for 5 so any additional fields that might show
-		// up in newer versions will gather in an element we're
-		// not actually using.
-		e.bodyParts = bytes.SplitN(e.body, fieldSep, 6)
+		e.bodyParts = bytes.SplitN(e.body, fieldSep, 9)
 
 		// Prevent crash if the server has sent us a malformed
 		// status message. This should never actually happen if
 		// the server is behaving itself.
-		if len(e.bodyParts) < 5 {
-			expanded := make([][]byte, 5)
+		if len(e.bodyParts) < 8 {
+			expanded := make([][]byte, 8)
 			copy(expanded, e.bodyParts)
 			e.bodyParts = expanded
 		}
