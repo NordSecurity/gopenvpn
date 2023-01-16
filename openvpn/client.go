@@ -220,7 +220,8 @@ func (c *MgmtClient) LatestState() (*StateEvent, error) {
 	}, nil
 }
 
-// LatestStatus retrieves the current daemon status information, in the same format as that produced by the OpenVPN --status directive.
+// LatestStatus retrieves the current daemon status information, in the same
+// format as that produced by the OpenVPN --status directive.
 func (c *MgmtClient) LatestStatus(statusFormat StatusFormat) ([][]byte, error) {
 	var cmd []byte
 	if statusFormat == StatusFormatDefault {
@@ -260,6 +261,16 @@ func (c *MgmtClient) Pid() (int, error) {
 	}
 
 	return pid, nil
+}
+
+// Auth sends username and password to the OpenVPN process.
+func (c *MgmtClient) Auth(username, password string) error {
+	_, err := c.simpleCommand(fmt.Sprintf("username \"Auth\" %s", username))
+	if err != nil {
+		return err
+	}
+	_, err = c.simpleCommand(fmt.Sprintf("password \"Auth\" %s", password))
+	return err
 }
 
 func (c *MgmtClient) sendCommand(cmd []byte) error {

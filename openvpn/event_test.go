@@ -14,24 +14,23 @@ import (
 // sends something nonsensical.
 
 func TestMalformedEvent(t *testing.T) {
-	testCases := [][]byte{
+	tests := [][]byte{
 		[]byte(""),
 		[]byte("HTTP/1.1 200 OK"),
 		[]byte("     "),
 		[]byte("\x00"),
 	}
 
-	for i, testCase := range testCases {
-		event := upgradeEvent(testCase)
+	for i, test := range tests {
+		event := upgradeEvent(test)
 
-		var malformed *MalformedEvent
-		var ok bool
-		if malformed, ok = event.(*MalformedEvent); !ok {
+		malformed, ok := event.(*MalformedEvent)
+		if !ok {
 			t.Errorf("test %d got %T; want %T", i, event, malformed)
 			continue
 		}
 
-		wantString := fmt.Sprintf("Malformed Event %q", testCase)
+		wantString := fmt.Sprintf("Malformed Event %q", test)
 		if gotString := malformed.String(); gotString != wantString {
 			t.Errorf("test %d String returned %q; want %q", i, gotString, wantString)
 		}
@@ -39,60 +38,57 @@ func TestMalformedEvent(t *testing.T) {
 }
 
 func TestUnknownEvent(t *testing.T) {
-	type TestCase struct {
-		Input    []byte
-		WantType string
-		WantBody string
-	}
-	testCases := []TestCase{
+	tests := []struct {
+		input    []byte
+		wantType string
+		wantBody string
+	}{
 		{
-			Input:    []byte("DUMMY:baz"),
-			WantType: "DUMMY",
-			WantBody: "baz",
+			input:    []byte("DUMMY:baz"),
+			wantType: "DUMMY",
+			wantBody: "baz",
 		},
 		{
-			Input:    []byte("DUMMY:"),
-			WantType: "DUMMY",
-			WantBody: "",
+			input:    []byte("DUMMY:"),
+			wantType: "DUMMY",
+			wantBody: "",
 		},
 		{
-			Input:    []byte("DUMMY:abc,123,456"),
-			WantType: "DUMMY",
-			WantBody: "abc,123,456",
+			input:    []byte("DUMMY:abc,123,456"),
+			wantType: "DUMMY",
+			wantBody: "abc,123,456",
 		},
 	}
 
-	for i, testCase := range testCases {
-		event := upgradeEvent(testCase.Input)
+	for i, test := range tests {
+		event := upgradeEvent(test.input)
 
-		var unk *UnknownEvent
-		var ok bool
-		if unk, ok = event.(*UnknownEvent); !ok {
+		unk, ok := event.(*UnknownEvent)
+		if !ok {
 			t.Errorf("test %d got %T; want %T", i, event, unk)
 			continue
 		}
 
-		if got, want := unk.Type(), testCase.WantType; got != want {
+		if got, want := unk.Type(), test.wantType; got != want {
 			t.Errorf("test %d Type returned %q; want %q", i, got, want)
 		}
-		if got, want := unk.Body(), testCase.WantBody; got != want {
+
+		if got, want := unk.Body(), test.wantBody; got != want {
 			t.Errorf("test %d Body returned %q; want %q", i, got, want)
 		}
 	}
 }
 
 func TestHoldEvent(t *testing.T) {
-	testCases := [][]byte{
+	tests := [][]byte{
 		[]byte("HOLD:"),
 		[]byte("HOLD:waiting for hold release"),
 	}
 
-	for i, testCase := range testCases {
-		event := upgradeEvent(testCase)
+	for i, test := range tests {
+		event := upgradeEvent(test)
 
-		var hold *HoldEvent
-		var ok bool
-		if hold, ok = event.(*HoldEvent); !ok {
+		if hold, ok := event.(*HoldEvent); !ok {
 			t.Errorf("test %d got %T; want %T", i, event, hold)
 			continue
 		}
@@ -100,247 +96,281 @@ func TestHoldEvent(t *testing.T) {
 }
 
 func TestEchoEvent(t *testing.T) {
-	type TestCase struct {
-		Input         []byte
-		WantTimestamp string
-		WantMessage   string
-	}
-	testCases := []TestCase{
+	tests := []struct {
+		input         []byte
+		wantTimestamp string
+		wantMessage   string
+	}{
 		{
-			Input:         []byte("ECHO:123,foo"),
-			WantTimestamp: "123",
-			WantMessage:   "foo",
+			input:         []byte("ECHO:123,foo"),
+			wantTimestamp: "123",
+			wantMessage:   "foo",
 		},
 		{
-			Input:         []byte("ECHO:123,"),
-			WantTimestamp: "123",
-			WantMessage:   "",
+			input:         []byte("ECHO:123,"),
+			wantTimestamp: "123",
+			wantMessage:   "",
 		},
 		{
-			Input:         []byte("ECHO:,foo"),
-			WantTimestamp: "",
-			WantMessage:   "foo",
+			input:         []byte("ECHO:,foo"),
+			wantTimestamp: "",
+			wantMessage:   "foo",
 		},
 		{
-			Input:         []byte("ECHO:,"),
-			WantTimestamp: "",
-			WantMessage:   "",
+			input:         []byte("ECHO:,"),
+			wantTimestamp: "",
+			wantMessage:   "",
 		},
 		{
-			Input:         []byte("ECHO:"),
-			WantTimestamp: "",
-			WantMessage:   "",
+			input:         []byte("ECHO:"),
+			wantTimestamp: "",
+			wantMessage:   "",
 		},
 	}
 
-	for i, testCase := range testCases {
-		event := upgradeEvent(testCase.Input)
+	for i, test := range tests {
+		event := upgradeEvent(test.input)
 
-		var echo *EchoEvent
-		var ok bool
-		if echo, ok = event.(*EchoEvent); !ok {
+		echo, ok := event.(*EchoEvent)
+		if !ok {
 			t.Errorf("test %d got %T; want %T", i, event, echo)
 			continue
 		}
 
-		if got, want := echo.RawTimestamp(), testCase.WantTimestamp; got != want {
+		if got, want := echo.RawTimestamp(), test.wantTimestamp; got != want {
 			t.Errorf("test %d RawTimestamp returned %q; want %q", i, got, want)
 		}
-		if got, want := echo.Message(), testCase.WantMessage; got != want {
+
+		if got, want := echo.Message(), test.wantMessage; got != want {
 			t.Errorf("test %d Message returned %q; want %q", i, got, want)
 		}
 	}
 }
 
 func TestStateEvent(t *testing.T) {
-	type TestCase struct {
-		Input          []byte
-		WantTimestamp  string
-		WantState      string
-		WantDesc       string
-		WantLocalAddr  string
-		WantRemoteAddr string
-	}
-	testCases := []TestCase{
+	tests := []struct {
+		input          []byte
+		wantTimestamp  string
+		wantState      string
+		wantDesc       string
+		wantLocalAddr  string
+		wantRemoteAddr string
+	}{
 		{
-			Input:          []byte("STATE:"),
-			WantTimestamp:  "",
-			WantState:      "",
-			WantDesc:       "",
-			WantLocalAddr:  "",
-			WantRemoteAddr: "",
+			input:          []byte("STATE:"),
+			wantTimestamp:  "",
+			wantState:      "",
+			wantDesc:       "",
+			wantLocalAddr:  "",
+			wantRemoteAddr: "",
 		},
 		{
-			Input:          []byte("STATE:,"),
-			WantTimestamp:  "",
-			WantState:      "",
-			WantDesc:       "",
-			WantLocalAddr:  "",
-			WantRemoteAddr: "",
+			input:          []byte("STATE:,"),
+			wantTimestamp:  "",
+			wantState:      "",
+			wantDesc:       "",
+			wantLocalAddr:  "",
+			wantRemoteAddr: "",
 		},
 		{
-			Input:          []byte("STATE:,,,,"),
-			WantTimestamp:  "",
-			WantState:      "",
-			WantDesc:       "",
-			WantLocalAddr:  "",
-			WantRemoteAddr: "",
+			input:          []byte("STATE:,,,,"),
+			wantTimestamp:  "",
+			wantState:      "",
+			wantDesc:       "",
+			wantLocalAddr:  "",
+			wantRemoteAddr: "",
 		},
 		{
-			Input:          []byte("STATE:123,CONNECTED,good,172.16.0.1,192.168.4.1"),
-			WantTimestamp:  "123",
-			WantState:      "CONNECTED",
-			WantDesc:       "good",
-			WantLocalAddr:  "172.16.0.1",
-			WantRemoteAddr: "192.168.4.1",
+			input:          []byte("STATE:123,CONNECTED,good,172.16.0.1,192.168.4.1"),
+			wantTimestamp:  "123",
+			wantState:      "CONNECTED",
+			wantDesc:       "good",
+			wantLocalAddr:  "172.16.0.1",
+			wantRemoteAddr: "192.168.4.1",
 		},
 		{
-			Input:          []byte("STATE:123,RECONNECTING,SIGHUP,,"),
-			WantTimestamp:  "123",
-			WantState:      "RECONNECTING",
-			WantDesc:       "SIGHUP",
-			WantLocalAddr:  "",
-			WantRemoteAddr: "",
+			input:          []byte("STATE:123,RECONNECTING,SIGHUP,,"),
+			wantTimestamp:  "123",
+			wantState:      "RECONNECTING",
+			wantDesc:       "SIGHUP",
+			wantLocalAddr:  "",
+			wantRemoteAddr: "",
 		},
 		{
-			Input:          []byte("STATE:123,RECONNECTING,SIGHUP,,,extra"),
-			WantTimestamp:  "123",
-			WantState:      "RECONNECTING",
-			WantDesc:       "SIGHUP",
-			WantLocalAddr:  "",
-			WantRemoteAddr: "",
+			input:          []byte("STATE:123,RECONNECTING,SIGHUP,,,extra"),
+			wantTimestamp:  "123",
+			wantState:      "RECONNECTING",
+			wantDesc:       "SIGHUP",
+			wantLocalAddr:  "",
+			wantRemoteAddr: "",
 		},
 	}
 
-	for i, testCase := range testCases {
-		event := upgradeEvent(testCase.Input)
+	for i, test := range tests {
+		event := upgradeEvent(test.input)
 
-		var st *StateEvent
-		var ok bool
-		if st, ok = event.(*StateEvent); !ok {
+		st, ok := event.(*StateEvent)
+		if !ok {
 			t.Errorf("test %d got %T; want %T", i, event, st)
 			continue
 		}
 
-		if got, want := st.RawTimestamp(), testCase.WantTimestamp; got != want {
+		if got, want := st.RawTimestamp(), test.wantTimestamp; got != want {
 			t.Errorf("test %d RawTimestamp returned %q; want %q", i, got, want)
 		}
-		if got, want := st.NewState(), testCase.WantState; got != want {
+
+		if got, want := st.NewState(), test.wantState; got != want {
 			t.Errorf("test %d NewState returned %q; want %q", i, got, want)
 		}
-		if got, want := st.Description(), testCase.WantDesc; got != want {
+
+		if got, want := st.Description(), test.wantDesc; got != want {
 			t.Errorf("test %d Description returned %q; want %q", i, got, want)
 		}
-		if got, want := st.LocalTunnelAddr(), testCase.WantLocalAddr; got != want {
+
+		if got, want := st.LocalTunnelAddr(), test.wantLocalAddr; got != want {
 			t.Errorf("test %d LocalTunnelAddr returned %q; want %q", i, got, want)
 		}
-		if got, want := st.RemoteAddr(), testCase.WantRemoteAddr; got != want {
+
+		if got, want := st.RemoteAddr(), test.wantRemoteAddr; got != want {
 			t.Errorf("test %d RemoteAddr returned %q; want %q", i, got, want)
 		}
 	}
 }
 
 func TestByteCountEvent(t *testing.T) {
-	type TestCase struct {
-		Input        []byte
-		WantClientId string
-		WantBytesIn  int
-		WantBytesOut int
-	}
-	testCases := []TestCase{
+	tests := []struct {
+		input        []byte
+		wantClientId string
+		wantBytesIn  int
+		wantBytesOut int
+	}{
 		{
-			Input:        []byte("BYTECOUNT:"),
-			WantClientId: "",
-			WantBytesIn:  0,
-			WantBytesOut: 0,
+			input:        []byte("BYTECOUNT:"),
+			wantClientId: "",
+			wantBytesIn:  0,
+			wantBytesOut: 0,
 		},
 		{
-			Input:        []byte("BYTECOUNT:123,456"),
-			WantClientId: "",
-			WantBytesIn:  123,
-			WantBytesOut: 456,
+			input:        []byte("BYTECOUNT:123,456"),
+			wantClientId: "",
+			wantBytesIn:  123,
+			wantBytesOut: 456,
 		},
 		{
-			Input:        []byte("BYTECOUNT:,"),
-			WantClientId: "",
-			WantBytesIn:  0,
-			WantBytesOut: 0,
+			input:        []byte("BYTECOUNT:,"),
+			wantClientId: "",
+			wantBytesIn:  0,
+			wantBytesOut: 0,
 		},
 		{
-			Input:        []byte("BYTECOUNT:5,"),
-			WantClientId: "",
-			WantBytesIn:  5,
-			WantBytesOut: 0,
+			input:        []byte("BYTECOUNT:5,"),
+			wantClientId: "",
+			wantBytesIn:  5,
+			wantBytesOut: 0,
 		},
 		{
-			Input:        []byte("BYTECOUNT:,6"),
-			WantClientId: "",
-			WantBytesIn:  0,
-			WantBytesOut: 6,
+			input:        []byte("BYTECOUNT:,6"),
+			wantClientId: "",
+			wantBytesIn:  0,
+			wantBytesOut: 6,
 		},
 		{
-			Input:        []byte("BYTECOUNT:6"),
-			WantClientId: "",
-			WantBytesIn:  6,
-			WantBytesOut: 0,
+			input:        []byte("BYTECOUNT:6"),
+			wantClientId: "",
+			wantBytesIn:  6,
+			wantBytesOut: 0,
 		},
 		{
-			Input:        []byte("BYTECOUNT:wrong,bad"),
-			WantClientId: "",
-			WantBytesIn:  0,
-			WantBytesOut: 0,
+			input:        []byte("BYTECOUNT:wrong,bad"),
+			wantClientId: "",
+			wantBytesIn:  0,
+			wantBytesOut: 0,
 		},
 		{
-			Input:        []byte("BYTECOUNT:1,2,3"),
-			WantClientId: "",
-			WantBytesIn:  1,
-			WantBytesOut: 2,
+			input:        []byte("BYTECOUNT:1,2,3"),
+			wantClientId: "",
+			wantBytesIn:  1,
+			wantBytesOut: 2,
 		},
 		{
 			// Intentionally malformed BYTECOUNT event sent as BYTECOUNT_CLI
-			Input:        []byte("BYTECOUNT_CLI:123,456"),
-			WantClientId: "123",
-			WantBytesIn:  456,
-			WantBytesOut: 0,
+			input:        []byte("BYTECOUNT_CLI:123,456"),
+			wantClientId: "123",
+			wantBytesIn:  456,
+			wantBytesOut: 0,
 		},
 		{
-			Input:        []byte("BYTECOUNT_CLI:"),
-			WantClientId: "",
-			WantBytesIn:  0,
-			WantBytesOut: 0,
+			input:        []byte("BYTECOUNT_CLI:"),
+			wantClientId: "",
+			wantBytesIn:  0,
+			wantBytesOut: 0,
 		},
 		{
-			Input:        []byte("BYTECOUNT_CLI:abc123,123,456"),
-			WantClientId: "abc123",
-			WantBytesIn:  123,
-			WantBytesOut: 456,
+			input:        []byte("BYTECOUNT_CLI:abc123,123,456"),
+			wantClientId: "abc123",
+			wantBytesIn:  123,
+			wantBytesOut: 456,
 		},
 		{
-			Input:        []byte("BYTECOUNT_CLI:abc123,123"),
-			WantClientId: "abc123",
-			WantBytesIn:  123,
-			WantBytesOut: 0,
+			input:        []byte("BYTECOUNT_CLI:abc123,123"),
+			wantClientId: "abc123",
+			wantBytesIn:  123,
+			wantBytesOut: 0,
 		},
 	}
 
-	for i, testCase := range testCases {
-		event := upgradeEvent(testCase.Input)
+	for i, test := range tests {
+		event := upgradeEvent(test.input)
 
-		var bc *ByteCountEvent
-		var ok bool
-		if bc, ok = event.(*ByteCountEvent); !ok {
+		bc, ok := event.(*ByteCountEvent)
+		if !ok {
 			t.Errorf("test %d got %T; want %T", i, event, bc)
 			continue
 		}
 
-		if got, want := bc.ClientId(), testCase.WantClientId; got != want {
+		if got, want := bc.ClientId(), test.wantClientId; got != want {
 			t.Errorf("test %d ClientId returned %q; want %q", i, got, want)
 		}
-		if got, want := bc.BytesIn(), testCase.WantBytesIn; got != want {
+
+		if got, want := bc.BytesIn(), test.wantBytesIn; got != want {
 			t.Errorf("test %d BytesIn returned %d; want %d", i, got, want)
 		}
-		if got, want := bc.BytesOut(), testCase.WantBytesOut; got != want {
+
+		if got, want := bc.BytesOut(), test.wantBytesOut; got != want {
 			t.Errorf("test %d BytesOut returned %d; want %d", i, got, want)
+		}
+	}
+}
+
+func TestPasswordEvent(t *testing.T) {
+	tests := [][]byte{
+		[]byte("PASSWORD:"),
+		[]byte("PASSWORD:Need 'Private Key' password"),
+		[]byte("PASSWORD:Need 'Auth' username/password"),
+		[]byte("PASSWORD:Verification Failed: 'Private Key'"),
+		[]byte("PASSWORD:Verification Failed: 'Auth'"),
+		[]byte("PASSWORD:Verification Failed: 'custom string'"),
+	}
+
+	for i, test := range tests {
+		event := upgradeEvent(test)
+
+		if passwd, ok := event.(*PasswordEvent); !ok {
+			t.Errorf("test %d got %T; want %T", i, event, passwd)
+		}
+	}
+}
+
+func TestFatalEvent(t *testing.T) {
+	tests := [][]byte{
+		[]byte("FATAL:"),
+	}
+
+	for i, test := range tests {
+		event := upgradeEvent(test)
+
+		if fatal, ok := event.(*FatalEvent); !ok {
+			t.Errorf("test %d got %T; want %T", i, event, fatal)
 		}
 	}
 }
