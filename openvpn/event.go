@@ -274,6 +274,25 @@ func (e *ByteCountEvent) parts() [][]byte {
 	return e.bodyParts
 }
 
+// PasswordEvent represents a message from the OpenVPN process asking for
+// authentication data, such as username and password.
+type PasswordEvent struct {
+	body []byte
+}
+
+func (e *PasswordEvent) String() string {
+	return fmt.Sprintf("PASSWORD: %s", string(e.body))
+}
+
+// FatalEvent represents a message from the OpenVPN process before exiting.
+type FatalEvent struct {
+	body []byte
+}
+
+func (e *FatalEvent) String() string {
+	return fmt.Sprintf("FATAL: %s", string(e.body))
+}
+
 func upgradeEvent(raw []byte) Event {
 	splitIdx := bytes.Index(raw, eventSep)
 	if splitIdx == -1 {
@@ -295,6 +314,10 @@ func upgradeEvent(raw []byte) Event {
 		return &ByteCountEvent{hasClient: false, body: body}
 	case bytes.Equal(keyword, byteCountCliEventKW):
 		return &ByteCountEvent{hasClient: true, body: body}
+	case bytes.Equal(keyword, passwordEventKW):
+		return &PasswordEvent{body: body}
+	case bytes.Equal(keyword, fatalEventKW):
+		return &FatalEvent{body: body}
 	default:
 		return &UnknownEvent{keyword, body}
 	}
