@@ -204,6 +204,14 @@ func TestStateEvent(t *testing.T) {
 			wantLocalAddr:  "",
 			wantRemoteAddr: "",
 		},
+		{
+			input:          []byte("STATE:123,CONNECTED,good,172.16.0.1,192.168.4.1,1337,,,::1"),
+			wantTimestamp:  "123",
+			wantState:      "CONNECTED",
+			wantDesc:       "good",
+			wantLocalAddr:  "::1",
+			wantRemoteAddr: "192.168.4.1",
+		},
 	}
 
 	for i, test := range tests {
