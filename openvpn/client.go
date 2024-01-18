@@ -169,6 +169,20 @@ func (c *MgmtClient) SetEchoEvents(on bool) error {
 	return err
 }
 
+// SetLogEvents either enables or disables ...
+//
+// When enabled, a LogEvent will be emitted from the event channel each
+// time the server sends an echo command. See LogEvent for more information.
+func (c *MgmtClient) SetLogEvents(on bool) error {
+	var err error
+	if on {
+		_, err = c.simpleCommand("log on")
+	} else {
+		_, err = c.simpleCommand("log off")
+	}
+	return err
+}
+
 // SetByteCountEvents either enables or disables ongoing asynchronous events
 // for information on OpenVPN bandwidth usage.
 //

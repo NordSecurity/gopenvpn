@@ -311,6 +311,8 @@ func upgradeEvent(raw []byte) Event {
 		return &HoldEvent{body}
 	case bytes.Equal(keyword, echoEventKW):
 		return &EchoEvent{body}
+	case bytes.Equal(keyword, logEventKW):
+		return &LogEvent{body: body}
 	case bytes.Equal(keyword, byteCountEventKW):
 		return &ByteCountEvent{hasClient: false, body: body}
 	case bytes.Equal(keyword, byteCountCliEventKW):
@@ -322,4 +324,49 @@ func upgradeEvent(raw []byte) Event {
 	default:
 		return &UnknownEvent{keyword, body}
 	}
+}
+
+// LogEvent represents a log line from the OpenVPN process.
+type LogEvent struct {
+	body []byte
+
+	// populated on first call to parts()
+	bodyParts [][]byte
+}
+
+func (e LogEvent) String() string {
+	return fmt.Sprintf("LOG: %s", string(e.body))
+}
+
+func (e *LogEvent) parts() [][]byte {
+	if e.bodyParts == nil {
+		e.bodyParts = bytes.SplitN(e.body, fieldSep, 3)
+
+		wantCount := 3
+
+		// Prevent crash if the server has sent us a malformed
+		// message. This should never actually happen if the
+		// server is behaving itself.
+		if len(e.bodyParts) < wantCount {
+			expanded := make([][]byte, wantCount)
+			copy(expanded, e.bodyParts)
+			e.bodyParts = expanded
+		}
+	}
+	return e.bodyParts
+}
+
+func (e *LogEvent) Timestamp() string {
+	parts := e.parts()
+	return string(parts[0])
+}
+
+func (e *LogEvent) Level() string {
+	parts := e.parts()
+	return string(parts[1])
+}
+
+func (e *LogEvent) Line() string {
+	parts := e.parts()
+	return string(parts[2])
 }
